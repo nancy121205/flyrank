@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Content Pages Should Be Reviewed First?</title>
+<meta name="description" content="A reproducible comparison of a transparent baseline and a machine-learning ranking for content refresh review.">
+<style>
+:root { --ink:#17212b; --muted:#596777; --line:#dce3e8; --paper:#ffffff; --wash:#f5f7f8; --accent:#235d75; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--wash); color:var(--ink); font:17px/1.7 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+main { max-width:920px; margin:0 auto; padding:28px 22px 72px; background:var(--paper); }
+header { padding:36px 0 26px; border-bottom:1px solid var(--line); }
+.kicker { color:var(--accent); font-size:.78rem; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
+h1 { max-width:780px; font-size:clamp(2rem,5vw,3.5rem); line-height:1.1; letter-spacing:-.035em; margin:.45em 0; }
+.deck { color:var(--muted); font-size:1.12rem; max-width:740px; }
+h2 { margin-top:2.4em; font-size:1.55rem; line-height:1.25; }
+h3 { margin-top:1.6em; font-size:1.1rem; }
+p,li { max-width:78ch; }
+a { color:var(--accent); }
+.callout { background:#f2f6f8; border-left:4px solid var(--accent); padding:14px 18px; margin:22px 0; }
+.meta { color:var(--muted); font-size:.92rem; }
+table { border-collapse:collapse; width:100%; margin:18px 0 28px; font-size:.92rem; }
+th,td { border-bottom:1px solid var(--line); padding:10px 9px; text-align:left; vertical-align:top; }
+th { background:#f5f7f8; }
+figure { margin:28px 0; }
+figure img { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:10px; }
+figcaption { color:var(--muted); font-size:.9rem; margin-top:8px; }
+small,.small { color:var(--muted); }
+footer { border-top:1px solid var(--line); margin-top:42px; padding-top:20px; color:var(--muted); }
+@media(max-width:620px) { body { font-size:16px; } main { padding:18px 15px 48px; } table { font-size:.82rem; } th,td { padding:7px 5px; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="kicker">Machine Learning · Research artifact</div>
+<h1>Which Content Pages Should Be Reviewed First?</h1>
+<p class="deck">A baseline and machine-learning approach to content refresh prioritization</p>
+<p class="meta">Reproducible notebook · Client-grouped holdout · Seed 42</p>
+</header>
+
+<section id="abstract">
+<h2>Abstract</h2>
+<p>This study asks whether a machine-learning ranking can help prioritize content items associated with an existing decline label for human review. It uses the anonymized FlyRank ML Internship starter CSV and compares a transparent heuristic baseline with a Random Forest on the same client-grouped holdout. The evaluation reports Precision@20, Precision@50, average precision, and the held-out positive-label rate. In this run, the Random Forest achieved Precision@20 of 0.550 and Precision@50 of 0.580, compared with 0.400 and 0.320 for the baseline. The queue is decision-support for editorial review; it does not establish future traffic loss or prove that refreshing a page causes performance to improve.</p>
+</section>
+
+<section id="problem">
+<h2>1. Introduction / problem statement</h2>
+<p>Content teams have limited editorial time and need a practical way to decide which pages to inspect first. This study tests whether a model ranking based on content and search metadata improves top-of-queue identification of items associated with an existing decline label compared with a transparent rule-based baseline.</p>
+<p>The output is a ranked review queue with reason codes. It is not an automatic publishing system and does not determine whether a page should be changed.</p>
+</section>
+
+<section id="data">
+<h2>2. Data</h2>
+<p>The analysis uses the public anonymized starter CSV release, not the gated production warehouse. The raw file contained 30,000 rows and 44 columns; after requiring positive 90-day impressions, content age of at least 90 days, and one row per content ID, 30,000 rows remained. The eligible sample contains 32 client groups.</p>
+<p>The target is the existing label <code>trend_direction == 'down'</code>. It is not a future label. Identifier columns are used only for deduplication and grouping. Client IDs, content IDs, trend-derived fields, private queries, and URLs are not included in the public ranked queue.</p>
+<p>Metrics represent a trailing 90-day window as provided by the dataset. Because the target is an existing trend label and its time construction may overlap these metrics, results are interpreted as retrospective associations rather than clean future forecasts.</p>
+</section>
+
+<section id="methods">
+<h2>3. Methodology</h2>
+<p>The baseline score combines visibility (40%), freshness risk (30%), position opportunity (25%), and relative content-depth gap (5%). These components create an interpretable prioritization heuristic without training on the target.</p>
+<p>The Random Forest uses available numeric and categorical metadata. Numeric missing values are median-imputed with missingness indicators; categorical values are most-frequent-imputed and one-hot encoded. The model uses 200 trees, maximum depth 10, minimum leaf size 25, balanced subsampling, and random seed 42.</p>
+<p>Validation uses one 80/20 client-grouped holdout. No client group appears in both training and test sets. Both the baseline and model are evaluated on the same held-out items. The features exclude <code>content_id</code>, <code>client_id</code>, <code>trend_direction</code>, <code>trend_pct</code>, and target-derived labels.</p>
+</section>
+
+<section id="results">
+<h2>4. Results</h2>
+<p>The held-out test set contains 6,163 items, with a positive-label rate of 0.511. Precision@K measures the share of positive labels in the top K ranked items. Average precision summarizes the precision-recall ranking curve.</p>
+<table>
+<thead><tr><th>Ranking</th><th>Test rows</th><th>Positive rate</th><th>Precision@20</th><th>Precision@50</th><th>Average precision</th></tr></thead>
+<tbody><tr><td>Transparent baseline</td><td>6163</td><td>0.511</td><td>0.400</td><td>0.320</td><td>0.482</td></tr><tr><td>Random Forest</td><td>6163</td><td>0.511</td><td>0.550</td><td>0.580</td><td>0.591</td></tr></tbody>
+</table>
+<figure><img src="assets/model_vs_baseline.png" alt="Bar chart comparing baseline and Random Forest metrics on the same client-grouped holdout"><figcaption>Figure 1. Baseline and model metrics on identical held-out items. Higher is better for these ranking metrics; interpretation should account for test-set size and positive-label rate.</figcaption></figure>
+<figure><img src="assets/model_score_distribution.png" alt="Histogram of Random Forest scores for held-out items"><figcaption>Figure 2. Distribution of model scores for the existing decline label in the held-out sample.</figcaption></figure>
+<p>These values measure agreement with the available label. They do not measure the causal effect of refreshing content, nor do they establish future performance.</p>
+</section>
+
+<section id="limitations">
+<h2>5. Limitations and honest framing</h2>
+<ul>
+<li>The target is an existing trend label, not a future outcome.</li>
+<li>Trailing-window metrics may overlap the period used to derive the label.</li>
+<li>A single client-grouped holdout is one estimate and may vary with the split.</li>
+<li>The starter sample may not represent other clients, periods, or the gated production warehouse.</li>
+<li>Reason codes are screening prompts, not causal explanations.</li>
+<li>Missingness, tracking changes, seasonality, and content-type differences can affect the interpretation.</li>
+<li>No experiment here establishes that updating a page will increase traffic.</li>
+</ul>
+</section>
+
+<section id="recommendations">
+<h2>6. Ranked recommendations</h2>
+<p>The queue is sorted by Random Forest score on the held-out items. Item IDs below are synthetic display IDs; original identifiers are not published. A person must inspect each page and verify search intent, factual accuracy, seasonality, tracking quality, and business context before acting.</p>
+<table>
+<thead><tr><th>Rank</th><th>Item</th><th>Model score</th><th>Reason codes</th><th>Suggested human review</th></tr></thead>
+<tbody><tr><td>1</td><td>item_001</td><td>0.863</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>2</td><td>item_002</td><td>0.857</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>3</td><td>item_003</td><td>0.856</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>4</td><td>item_004</td><td>0.852</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>5</td><td>item_005</td><td>0.851</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>6</td><td>item_006</td><td>0.851</td><td>page_one_decay_risk</td><td>Review accuracy, intent match, and SERP changes</td></tr><tr><td>7</td><td>item_007</td><td>0.850</td><td>low_ctr_visible_page</td><td>Review title/snippet and search intent</td></tr><tr><td>8</td><td>item_008</td><td>0.849</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>9</td><td>item_009</td><td>0.849</td><td>general_refresh_review</td><td>Manual content and data review</td></tr><tr><td>10</td><td>item_010</td><td>0.849</td><td>general_refresh_review</td><td>Manual content and data review</td></tr></tbody>
+</table>
+<p>The complete public-safe queue is available as <a href="../work/outputs/ranked_recommendations_public_safe.csv">a CSV export</a> in the repository. No recommendation should trigger automatic publishing, deletion, redirects, or changes to sensitive claims.</p>
+</section>
+
+<section id="reproducibility">
+<h2>7. Reproducibility</h2>
+<ul>
+<li><a href="https://github.com/nancy121205/flyrank">Project repository</a></li>
+<li><a href="https://github.com/nancy121205/flyrank/blob/main/work/notebooks/capstone.ipynb">Capstone notebook</a></li>
+<li><a href="https://github.com/nancy121205/flyrank/blob/main/work/notebooks/w06_validation_audit.ipynb">W06 validation audit</a></li>
+<li><a href="https://github.com/nancy121205/flyrank/blob/main/work/notebooks/w07_action_playbook.ipynb">W07 action playbook</a></li>
+<li><a href="https://github.com/flyrank-bih/flyrank-ml-internship-starter">Starter repository</a></li>
+</ul>
+<p>Run the capstone notebook top-to-bottom in an environment with pandas, NumPy, scikit-learn, and Matplotlib. The notebook writes measured metrics, figures, and the ranked review queue. Re-running with the same dataset and random seed should reproduce the split and model configuration, subject to library and environment differences.</p>
+</section>
+
+<footer>
+<h2>Acknowledgments &amp; data credit</h2>
+<p>Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a>.</p>
+<p>This work uses the anonymized starter CSV release identified in the Data section. Findings are limited to the analysis described above and are intended for research and decision-support purposes.</p>
+<p class="small">Generated from the executed capstone notebook. Do not publish until the public-safety checklist is complete and the outputs have been reviewed.</p>
+</footer>
+</main>
+</body>
+</html>
