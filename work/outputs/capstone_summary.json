@@ -1,0 +1,33 @@
+{
+  "dataset_release": "Public anonymized FlyRank ML Internship starter CSV",
+  "raw_rows": 30000,
+  "eligible_rows": 30000,
+  "client_groups": 32,
+  "random_state": 42,
+  "validation": "One 80/20 client-grouped holdout",
+  "target": "trend_direction == 'down' (existing label)",
+  "metrics": [
+    {
+      "ranking": "Transparent baseline",
+      "test_rows": 6163,
+      "test_positive_rate": 0.5109524582184002,
+      "Precision@20": 0.4,
+      "Precision@50": 0.32,
+      "Average precision": 0.4818625764958999
+    },
+    {
+      "ranking": "Random Forest",
+      "test_rows": 6163,
+      "test_positive_rate": 0.5109524582184002,
+      "Precision@20": 0.55,
+      "Precision@50": 0.58,
+      "Average precision": 0.5912559921410036
+    }
+  ],
+  "limitations": [
+    "Existing trend label, not a future outcome",
+    "Potential overlap between trailing-window metrics and label construction",
+    "Single grouped holdout",
+    "No causal estimate of refresh impact"
+  ]
+}
